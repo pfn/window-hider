@@ -1,0 +1,1 @@
+#define IDI_TRAYICON 1101
