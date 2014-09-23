@@ -117,6 +117,11 @@ int main(int argc, char** argv) {
 }
 */
 
+NOTIFYICONDATA iconData;
+
+UINT WM_TRAY_ICON_NOTIFYICON;
+HWND targetHwnd;
+
 LPTSTR error() {
     LPTSTR lpMsgBuf;
     FormatMessage(
@@ -131,8 +136,20 @@ LPTSTR error() {
         
     return lpMsgBuf;
 }
+
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+    if (msg == WM_TRAY_ICON_NOTIFYICON) {
+
+        switch ((UINT)lParam) {
+            case WM_LBUTTONDBLCLK:
+                Shell_NotifyIcon(NIM_DELETE, &iconData);
+                ShowWindow(targetHwnd, SW_RESTORE);
+                PostQuitMessage(0);
+                break;
+        }
+        return 0;
+    }
     switch (msg) {
         case WM_CLOSE:
             DestroyWindow(hWnd);
@@ -152,13 +169,28 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             ClientToScreen(hWnd, &p);
             HWND target = ChildWindowFromPointEx(GetDesktopWindow(), p,
                     CWP_SKIPDISABLED | CWP_SKIPINVISIBLE | CWP_SKIPTRANSPARENT);
-            //HWND target = WindowFromPoint(p);
             if (target) {
-                TCHAR str[256];
-                GetWindowText(target, str, 256);
-                MessageBox(NULL,
-                        str, str, MB_ICONERROR | MB_OK);
-                PostQuitMessage(0);
+                TCHAR title[256];
+
+                // required to show bubble
+                iconData.cbSize = NOTIFYICONDATA_V2_SIZE;
+                iconData.hWnd = hWnd;
+                iconData.uID = target;
+                iconData.uFlags = NIF_ICON | NIF_TIP | NIF_INFO | NIF_MESSAGE;
+                iconData.uCallbackMessage = WM_TRAY_ICON_NOTIFYICON;
+                GetWindowText(target, title, 256);
+                snprintf(iconData.szTip, 64, "[0x%x] - %s", target, title);
+
+                HICON icon = (HICON) GetClassLongPtr(target, GCLP_HICONSM);
+                iconData.hIcon = icon;
+                iconData.hBalloonIcon = icon;
+                strncpy(iconData.szInfoTitle, "Window Hidden", 64);
+                snprintf(iconData.szInfo, 256, "[0x%08x] - %s", target, title);
+                iconData.dwInfoFlags = 0x4; // NIIF_USER NIIF_INFO;
+                Shell_NotifyIcon(NIM_ADD, &iconData);
+                ShowWindow(target, SW_HIDE);
+                ShowWindow(hWnd, SW_HIDE);
+                targetHwnd = target;
             } else {
                 MessageBox(NULL,
                         TEXT("Unable to identify window, try again"),
@@ -172,10 +204,12 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     return 0;
 }
 
+
 int WINAPI WinMain(HINSTANCE hInstance,
         HINSTANCE hPrevInstance,
         LPSTR lpCmdLine,
         int nCmdShow) {
+    WM_TRAY_ICON_NOTIFYICON = RegisterWindowMessage(TEXT("NotifyIcon"));
     HWND hWnd;
     MSG msg;
     WNDCLASSEX wc;
