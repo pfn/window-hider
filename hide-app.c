@@ -33,10 +33,11 @@ LPTSTR error() {
 
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+    static HBRUSH hbrstatic;
     if (msg == WM_TRAY_ICON_NOTIFYICON) {
 
         switch ((UINT)lParam) {
-            case WM_LBUTTONDBLCLK:
+            case WM_LBUTTONUP:
                 Shell_NotifyIcon(NIM_DELETE, &iconData);
                 ShowWindow(targetHwnd, SW_RESTORE);
                 PostQuitMessage(0);
@@ -44,7 +45,28 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         }
         return 0;
     }
+    RECT r;
     switch (msg) {
+        case WM_CTLCOLORSTATIC: {
+            HDC hdcStatic = (HDC) wParam;
+            DWORD c = GetSysColor(COLOR_WINDOW);
+            //SetTextColor(hdcStatic, RGB(255,255,255));
+            COLORREF color = RGB(GetRValue(c),GetGValue(c),GetBValue(c));
+            SetBkColor(hdcStatic, color);
+            if (!hbrstatic) {
+                hbrstatic = CreateSolidBrush(color);
+            }
+            return (INT_PTR)hbrstatic;
+            break;
+        }
+        case WM_CREATE:
+            GetWindowRect(hWnd, &r);
+            CreateWindowEx(0, "STATIC",
+                    "Drag the cursor to any window to hide it",
+                    WS_CHILD | WS_VISIBLE,
+                    24, 24, r.right - r.left - 48, r.bottom - r.top - 48,
+                    hWnd, NULL, GetModuleHandle(NULL), NULL);
+            break;
         case WM_CLOSE:
             DestroyWindow(hWnd);
             PostQuitMessage(0);

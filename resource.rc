@@ -23,7 +23,7 @@ BEGIN
       VALUE "FileDescription", "Windows Task Tray Hider"
       VALUE "FileVersion", "1.0.0.0"
       VALUE "InternalName", "hide-app"
-      VALUE "LegalCopyright", "(c) 2014 Perry Nguyen"
+      VALUE "LegalCopyright", "© 2014 Perry Nguyen"
       VALUE "OriginalFilename", "hide-app.exe"
       VALUE "ProductName", "Windows Task Tray Hider"
       VALUE "ProductVersion", "1.0.0.0"

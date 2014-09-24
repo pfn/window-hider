@@ -7,7 +7,7 @@ resource.o: resource.rc resource.h
 	cc -Wall -c $<
 
 hide-app.exe: hide-app.o resource.o
-	cc -o $@ $^ -s -lcomctl32 -Wl,--subsystem,windows
+	cc -o $@ $^ -s -lgdi32 -lcomctl32 -Wl,--subsystem,windows
 
 clean:
 	rm *.o *.exe
