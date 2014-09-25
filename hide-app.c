@@ -65,9 +65,12 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     24, 24, r.right - r.left - 48, r.bottom - r.top - 48,
                     hWnd, NULL, GetModuleHandle(NULL), NULL);
             break;
+        case WM_DESTROY:
+            DeleteObject(hbrstatic);
+            PostQuitMessage(0);
+            break;
         case WM_CLOSE:
             DestroyWindow(hWnd);
-            PostQuitMessage(0);
             break;
         case WM_CAPTURECHANGED:
             break;
