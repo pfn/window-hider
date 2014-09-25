@@ -11,10 +11,8 @@
 
 #include "resource.h"
 
-NOTIFYICONDATA iconData;
 
 UINT WM_TRAY_ICON_NOTIFYICON;
-HWND targetHwnd;
 
 LPTSTR error() {
     LPTSTR lpMsgBuf;
@@ -33,7 +31,9 @@ LPTSTR error() {
 
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+    static HWND targetHwnd;
     static HBRUSH hbrstatic;
+    static NOTIFYICONDATA iconData;
     if (msg == WM_TRAY_ICON_NOTIFYICON) {
 
         switch ((UINT)lParam) {
@@ -50,14 +50,12 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         case WM_CTLCOLORSTATIC: {
             HDC hdcStatic = (HDC) wParam;
             DWORD c = GetSysColor(COLOR_WINDOW);
-            //SetTextColor(hdcStatic, RGB(255,255,255));
             COLORREF color = RGB(GetRValue(c),GetGValue(c),GetBValue(c));
             SetBkColor(hdcStatic, color);
             if (!hbrstatic) {
                 hbrstatic = CreateSolidBrush(color);
             }
             return (INT_PTR)hbrstatic;
-            break;
         }
         case WM_CREATE:
             GetWindowRect(hWnd, &r);
@@ -133,28 +131,28 @@ int WINAPI WinMain(HINSTANCE hInstance,
         LPSTR lpCmdLine,
         int nCmdShow) {
     WM_TRAY_ICON_NOTIFYICON = RegisterWindowMessage(TEXT("NotifyIcon"));
+    LPCTSTR MainWndClass    = TEXT("Window Hider");
+
     HWND hWnd;
     MSG msg;
+
     WNDCLASSEX wc;
-    LPCTSTR MainWndClass = TEXT("Window Hider");
-    wc.cbSize = sizeof(wc);
-    wc.style = 0;
-    wc.lpfnWndProc = &WindowProc;
-    wc.cbClsExtra = 0;
-    wc.cbWndExtra = 0;
-    wc.hInstance = hInstance;
-    wc.lpszMenuName = NULL;
+    wc.cbSize        = sizeof(wc);
+    wc.style         = 0;
+    wc.lpfnWndProc   = &WindowProc;
+    wc.cbClsExtra    = 0;
+    wc.cbWndExtra    = 0;
+    wc.hInstance     = hInstance;
+    wc.lpszMenuName  = NULL;
     wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
-    wc.hIcon   = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_TRAYICON));
-    wc.hIconSm = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_TRAYICON));
-    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+    wc.hIcon         = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_TRAYICON));
+    wc.hIconSm       = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_TRAYICON));
+    wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
     wc.lpszClassName = MainWndClass;
 
     INITCOMMONCONTROLSEX icc;
-
-    // Initialise common controls.
     icc.dwSize = sizeof(icc);
-    icc.dwICC = ICC_WIN95_CLASSES;
+    icc.dwICC  = ICC_WIN95_CLASSES;
     InitCommonControlsEx(&icc);
 
     if (!RegisterClassEx(&wc)) {
@@ -165,7 +163,8 @@ int WINAPI WinMain(HINSTANCE hInstance,
     }
 
     hWnd = CreateWindowEx(0, MainWndClass, MainWndClass,
-            WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
+            WS_OVERLAPPEDWINDOW ^ (WS_SIZEBOX|WS_MAXIMIZEBOX|WS_MINIMIZEBOX),
+            CW_USEDEFAULT, CW_USEDEFAULT,
             320, 200, NULL, NULL, hInstance, NULL);
 
     if (!hWnd) {
@@ -176,6 +175,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
     }
 
     ShowWindow(hWnd, nCmdShow);
+    SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
     while (GetMessage(&msg, NULL, 0, 0) > 0) {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
