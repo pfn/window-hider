@@ -1,6 +1,6 @@
 all: hide-app.exe
 
-resource.o: resource.rc resource.h
+resource.o: resource.rc resource.h TrayIcon.ico
 	windres $< $@
 
 .c.o: resource.h
