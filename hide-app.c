@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <shellapi.h>
 #include <commctrl.h>
+#include <tlhelp32.h>
 
 #include "resource.h"
 
@@ -27,6 +28,38 @@ LPTSTR error() {
              0, NULL );
         
     return lpMsgBuf;
+}
+
+BOOL GetProcessNameFromHwnd(HWND hWnd,
+        HWND target,
+        LPTSTR outName,
+        int outNameSize) {
+    BOOL found = FALSE;
+    DWORD pid;
+    DWORD tid = GetWindowThreadProcessId(target, &pid);
+    if (tid) {
+        HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+        if (hSnapshot) {
+            PROCESSENTRY32 pe32;
+            pe32.dwSize = sizeof(pe32);
+            if (Process32First(hSnapshot, &pe32)) {
+                do {
+                    if (pe32.th32ProcessID == pid) {
+                        found = TRUE;
+                        break;
+                    }
+                } while (Process32Next(hSnapshot, &pe32));
+                CloseHandle(hSnapshot);
+                if (found)
+                    strncpy(outName, pe32.szExeFile, outNameSize);
+            }
+        } else {
+            MessageBox(hWnd,
+                    error(), TEXT("CreateToolhelp32Snapshot Error"),
+                    MB_ICONERROR | MB_OK);
+        }
+    }
+    return found;
 }
 
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -130,7 +163,12 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
                         TEXT("Error"),
                         MB_ICONERROR | MB_OK);
             } else if (target) {
-                TCHAR title[256];
+                TCHAR title[MAX_PATH];
+                TCHAR processName[MAX_PATH];
+                BOOL r = GetProcessNameFromHwnd(hWnd,
+                        target, processName, MAX_PATH);
+                if (!r) return 0;
+                if (!strncmp(processName, "explorer.exe", MAX_PATH)) return 0;
 
                 // required to show bubble
                 iconData.cbSize = NOTIFYICONDATA_V2_SIZE;
@@ -138,7 +176,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 iconData.uID = (UINT) target;
                 iconData.uFlags = NIF_ICON | NIF_TIP | NIF_INFO | NIF_MESSAGE;
                 iconData.uCallbackMessage = WM_TRAY_ICON_NOTIFYICON;
-                GetWindowText(target, title, 256);
+                GetWindowText(target, title, MAX_PATH);
                 snprintf(iconData.szTip, 64,
                         "[0x%x] - %s", (UINT) target, title);
 
@@ -146,7 +184,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 iconData.hIcon = icon;
                 iconData.hBalloonIcon = icon;
                 strncpy(iconData.szInfoTitle, "Window Hidden", 64);
-                snprintf(iconData.szInfo, 256,
+                snprintf(iconData.szInfo, MAX_PATH,
                         "[0x%08x] - %s", (UINT) target, title);
                 iconData.dwInfoFlags = 0x4; // NIIF_USER
                 Shell_NotifyIcon(NIM_ADD, &iconData);
