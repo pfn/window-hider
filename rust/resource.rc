@@ -1,0 +1,39 @@
+#include "resource.h"
+#include <windows.h>
+
+// Executable version information.
+VS_VERSION_INFO    VERSIONINFO
+FILEVERSION        1,1,0,0
+PRODUCTVERSION     1,1,0,0
+FILEFLAGSMASK      VS_FFI_FILEFLAGSMASK
+#ifdef _DEBUG
+FILEFLAGS        VS_FF_DEBUG | VS_FF_PRERELEASE
+#else
+FILEFLAGS        0
+#endif
+FILEOS             VOS_NT_WINDOWS32
+FILETYPE           VFT_APP
+FILESUBTYPE        VFT2_UNKNOWN
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904e4"
+    BEGIN
+      VALUE "CompanyName", "Perry Nguyen"
+      VALUE "FileDescription", "Windows Task Tray Hider"
+      VALUE "FileVersion", "1.1.0.0"
+      VALUE "InternalName", "window-hider"
+      VALUE "LegalCopyright", "© 2016 Perry Nguyen"
+      VALUE "OriginalFilename", "window-hider.exe"
+      VALUE "ProductName", "Windows Task Tray Hider"
+      VALUE "ProductVersion", "1.1.0.0"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x409, 1200
+  END
+END
+
+IDI_TRAYICON ICON "TrayIcon.ico"
+
